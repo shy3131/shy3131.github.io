@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>数字增长控制示例</title>
+<style>
+  body {
+    background-color: white; /* 设置背景颜色为白色 */
+    color: black; /* 设置文本颜色为黑色 */
+    margin: 0; /* 移除默认的外边距 */
+    font-family: Arial, sans-serif; /* 设置字体 */
+  }
+  #number {
+    font-size: 60px; /* 默认数字大小 */
+    margin: 200px auto; /* 为数字添加外边距，水平居中 */
+    white-space: nowrap; /* 防止数字换行 */
+    text-align: center; /* 文本居中 */
+  }
+  .control-panel {
+    position: fixed; /* 固定在屏幕底部 */
+    bottom: 3%; /* 底部对齐 */
+    width: 100%; /* 宽度占满整个屏幕 */
+    display: flex; /* 使用Flexbox布局 */
+    justify-content: center; /* 水平居中 */
+    padding: 10px; /* 添加内边距 */
+    background-color: #f0f0f0; /* 浅灰色背景 */
+    z-index: 1000; /* 确保控制面板在最上层 */
+  }
+  .control-panel p {
+    margin: 0 20px; /* 控制面板中每个元素的外边距 */
+  }
+  input[type="number"],
+  input[type="color"],
+  select {
+    margin: 10px; /* 给输入框添加外边距 */
+    padding: 5px; /* 给输入框添加内边距 */
+  }
+  .recording-controls {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000; /* 确保录制控制按钮在最上层 */
+  }
+</style>
+</head>
+<body>
+<h1>数字增长控制示例</h1>
+<div id="number">0</div> <!-- 数字增长区域 -->
+<div class="control-panel">
+  <p>增长速度（毫秒）: <input type="number" id="speed" value="1000" min="100"></p>
+  <p>数字大小（px）: <input type="number" id="size" value="60" min="12"></p>
+  <p>增长倍数: <input type="number" id="multiplier" value="1" min="1"></p>
+  <p>目标数字: <input type="number" id="target" value="10000" min="0"></p>
+  <p>背景颜色: <input type="color" id="bgColor" value="#ffffff"></p>
+  <p>数字颜色: <input type="color" id="textColor" value="#000000"></p>
+  <p>数字字体: <select id="fontFamily">
+    <option value="Arial, sans-serif">Arial</option>
+    <option value="Verdana, sans-serif">Verdana</option>
+    <option value="Times New Roman, serif">Times New Roman</option>
+    <option value="Courier New, monospace">Courier New</option>
+    <option value="Georgia, serif">Georgia</option>
+  </select></p>
+  <button id="startStop">开始增长</button>
+  <button id="reset">数字重置</button> <!-- 数字重置按钮 -->
+  <button id="accelerate">加速</button> <!-- 加速按钮 -->
+</div>
+<div class="recording-controls">
+  <button id="startRecording">开始录制</button>
+  <button id="stopRecording" disabled>结束录制</button>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  let count = 0; // 初始化计数器
+  let intervalId = null; // 用于保存定时器的ID
+  const display = document.getElementById('number'); // 获取显示数字的元素
+  const speedControl = document.getElementById('speed'); // 获取速度控制输入框
+  const sizeControl = document.getElementById('size'); // 获取数字大小控制输入框
+  const multiplierControl = document.getElementById('multiplier'); // 获取增长倍数控制输入框
+  const targetControl = document.getElementById('target'); // 获取目标数字控制输入框
+  const startStopButton = document.getElementById('startStop'); // 获取开始/停止按钮
+  const resetButton = document.getElementById('reset'); // 获取重置按钮
+  const accelerateButton = document.getElementById('accelerate'); // 获取加速按钮
+  const bgColorControl = document.getElementById('bgColor'); // 获取背景颜色控制输入框
+  const textColorControl = document.getElementById('textColor'); // 获取数字颜色控制输入框
+  const fontFamilyControl = document.getElementById('fontFamily'); // 获取字体样式控制输入框
+
+  let speed = parseInt(speedControl.value); // 初始化速度
+
+  function toggleCounting() {
+    if (intervalId === null) {
+      intervalId = setInterval(incrementCount, speed);
+      startStopButton.textContent = '暂停增长';
+    } else {
+      clearInterval(intervalId);
+      intervalId = null;
+      startStopButton.textContent = '开始增长';
+    }
+  }
+
+  function incrementCount() {
+    let target = parseInt(targetControl.value);
+    let increment = parseInt(multiplierControl.value);
+    if (count + increment > target) {
+      // 如果增长后的数字超过目标数字，则设置为等于目标数字
+      count = target;
+    } else {
+      count += increment;
+    }
+    updateDisplay(count);
+    if (count === target) {
+      clearInterval(intervalId);
+      intervalId = null;
+      startStopButton.textContent = '开始增长';
+    }
+  }
+
+  function updateDisplay(value) {
+    let formattedValue = parseFloat(value).toFixed(2); // 保留两位小数
+    formattedValue = formattedValue.replace(/(\d)(?=(\d{3})+\.)/g, '$1,'); // 每三位添加分隔符
+    display.textContent = formattedValue; // 更新显示
+    display.style.fontSize = `${sizeControl.value}px`; // 更新数字大小
+    display.style.color = textColorControl.value; // 更新数字颜色
+    display.style.fontFamily = fontFamilyControl.value; // 更新数字字体
+  }
+
+  function resetCount() {
+    count = 0;
+    updateDisplay(count);
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = null;
+      startStopButton.textContent = '开始增长';
+    }
+  }
+
+  function accelerate() {
+    const currentSpeed = parseInt(speedControl.value);
+    speed = Math.max(currentSpeed - 100, 100); // 减少100毫秒，但不低于100毫秒
+    speedControl.value = speed;
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = setInterval(incrementCount, speed);
+    }
+  }
+
+  // 事件监听器
+  startStopButton.addEventListener('click', toggleCounting);
+  resetButton.addEventListener('click', resetCount); // 为重置按钮添加事件监听器
+  accelerateButton.addEventListener('click', accelerate); // 为加速按钮添加事件监听器
+  speedControl.addEventListener('input', function() {
+    speed = parseInt(this.value);
+    if (intervalId !== null) {
+      clearInterval(intervalId);
+      intervalId = setInterval(incrementCount, speed);
+    }
+  });
+  sizeControl.addEventListener('input', function() {
+    updateDisplay(count); // 更新数字大小
+  });
+  multiplierControl.addEventListener('input', function() {
+    // 当倍数改变时，重置计数器以应用新的倍数
+    count = 0;
+    updateDisplay(count);
+  });
+  bgColorControl.addEventListener('input', function() {
+    document.body.style.backgroundColor = this.value; // 更新背景颜色
+  });
+  textColorControl.addEventListener('input', function() {
+    updateDisplay(count); // 更新数字颜色
+  });
+  fontFamilyControl.addEventListener('change', function() {
+    updateDisplay(count); // 更新数字字体
+  });
+
+  // 录制屏幕功能
+  const startRecordingButton = document.getElementById('startRecording');
+  const stopRecordingButton = document.getElementById('stopRecording');
+  let mediaRecorder = null;
+  let chunks = [];
+
+  startRecordingButton.addEventListener('click', async () => {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.start();
+      mediaRecorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+      };
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'video/mp4' });
+        chunks = [];
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'recording.mp4';
+        a.click();
+      };
+      stopRecordingButton.disabled = false;
+    } catch (err) {
+      console.error('Recording error: ', err);
+    }
+  });
+
+  stopRecordingButton.addEventListener('click', () => {
+    mediaRecorder.stop();
+    stopRecordingButton.disabled = true;
+  });
+});
+</script>
+</body>
+</html> 
